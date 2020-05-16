@@ -2,7 +2,7 @@
  * External dependencies
  */
 import React, { Component, Fragment } from 'react';
-import { startsWith } from 'lodash';
+import { get, startsWith } from 'lodash';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { connect } from 'react-redux';
@@ -16,7 +16,7 @@ import { Dialog } from '@automattic/components';
 import Main from 'components/main';
 import { getCurrentPlan, isRequestingSitePlans } from 'state/sites/plans/selectors';
 import { getSelectedSite, getSelectedSiteId } from 'state/ui/selectors';
-import { isJetpackSite } from 'state/sites/selectors';
+import { getSiteAdminUrl, isJetpackSite } from 'state/sites/selectors';
 import DocumentHead from 'components/data/document-head';
 import TrackComponentView from 'lib/analytics/track-component-view';
 import PlansNavigation from 'my-sites/plans/navigation';
@@ -78,7 +78,7 @@ class CurrentPlan extends Component {
 	}
 
 	renderThankYou() {
-		const { currentPlan, product } = this.props;
+		const { currentPlan, product, selectedSite, siteAdminUrl } = this.props;
 
 		if ( startsWith( product, 'jetpack_backup' ) ) {
 			return <BackupProductThankYou />;
@@ -89,7 +89,9 @@ class CurrentPlan extends Component {
 		}
 
 		if ( startsWith( product, 'jetpack_search' ) ) {
-			return <SearchProductThankYou />;
+			const jetpackVersion = get( selectedSite, 'options.jetpack_version', 0 );
+
+			return <SearchProductThankYou { ...{ jetpackVersion, siteAdminUrl } } />;
 		}
 
 		if ( ! currentPlan || isFreePlan( currentPlan ) || isFreeJetpackPlan( currentPlan ) ) {
@@ -203,6 +205,7 @@ export default connect( ( state, { requestThankYou } ) => {
 	const isJetpackNotAtomic = false === isAutomatedTransfer && isJetpack;
 
 	const currentPlan = getCurrentPlan( state, selectedSiteId );
+	const siteAdminUrl = getSiteAdminUrl( state, selectedSiteId );
 
 	return {
 		currentPlan,
@@ -214,5 +217,6 @@ export default connect( ( state, { requestThankYou } ) => {
 		shouldShowDomainWarnings: ! isJetpack || isAutomatedTransfer,
 		showJetpackChecklist: isJetpackNotAtomic,
 		showThankYou: requestThankYou && isJetpackNotAtomic,
+		siteAdminUrl,
 	};
 } )( localize( CurrentPlan ) );
