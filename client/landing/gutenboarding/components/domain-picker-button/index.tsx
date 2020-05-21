@@ -25,6 +25,9 @@ import {
 import { STORE_KEY } from '../../stores/onboard';
 import { useDomainSuggestions } from '../../hooks/use-domain-suggestions';
 import { DOMAIN_SUGGESTIONS_STORE } from '../../stores/domain-suggestions';
+import { getSuggestionsVendor } from 'lib/domains/suggestions';
+
+const DOMAIN_SUGGESTION_VENDOR = getSuggestionsVendor( true );
 
 /**
  * Style dependencies
@@ -134,6 +137,7 @@ const DomainPickerButton: FunctionComponent< Props > = ( {
 				railcarId={ railcarId }
 				onModalUnmount={ recordCloseModal }
 				onModalOpen={ recordEnterModal }
+				domainSuggestionVendor={ DOMAIN_SUGGESTION_VENDOR }
 			/>
 			<DomainPickerModal
 				analyticsFlowId={ FLOW_ID }
@@ -155,6 +159,7 @@ const DomainPickerButton: FunctionComponent< Props > = ( {
 				railcarId={ railcarId }
 				onModalUnmount={ recordCloseModal }
 				onModalOpen={ recordEnterModal }
+				domainSuggestionVendor={ DOMAIN_SUGGESTION_VENDOR }
 			/>
 		</>
 	);
