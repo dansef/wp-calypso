@@ -20,19 +20,12 @@ import QueryMembershipProducts from 'components/data/query-memberships';
 import EllipsisMenu from 'components/ellipsis-menu';
 import PopoverMenuItem from 'components/popover/menu-item';
 import Gridicon from 'components/gridicon';
-import FormInputValidation from 'components/forms/form-input-validation';
-import FormTextInput from 'components/forms/form-text-input';
-import FormSectionHeading from 'components/forms/form-section-heading';
-import FormSelect from 'components/forms/form-select';
-import FormCurrencyInput from 'components/forms/form-currency-input';
-import FormLabel from 'components/forms/form-label';
-import FormFieldset from 'components/forms/form-fieldset';
-import FormToggle from 'components/forms/form-toggle';
 import {
 	requestAddProduct,
 	requestUpdateProduct,
 	requestDeleteProduct,
 } from 'state/memberships/product-list/actions';
+import RecurringPaymentsPlanAddEditModal from './add-edit-plan-modal';
 
 /**
  * @typedef {[string, number] CurrencyMinimum
@@ -76,14 +69,7 @@ class MembershipsProductsSection extends Component {
 	}
 	state = {
 		showDialog: false,
-		editedProductId: null,
-		deletedProductId: null,
-		editedProductName: '',
-		editedPayWhatYouWant: false,
-		editedMultiplePerUser: false,
-		editedPrice: { currency: 'USD', value: '' },
-		editedSchedule: '1 month',
-		focusedName: false,
+		product: {},
 	};
 	renderEllipsisMenu( productId ) {
 		return (
@@ -136,34 +122,14 @@ class MembershipsProductsSection extends Component {
 		if ( editedProductId ) {
 			const product = this.props.products.filter( ( prod ) => prod.ID === editedProductId ).pop();
 			this.setState( {
-				showDialog: true,
-				editedProductId,
-				editedProductName: product.title,
-				editedPrice: {
-					currency: product.currency,
-					value: product.price,
-				},
-				editedSchedule: product.renewal_schedule,
-				editedPayWhatYouWant: product.buyer_can_change_amount,
-				editedMultiplePerUser: !! product.multiple_per_user,
-				focusedName: false,
+				showDialog: 'editPlan',
+				product,
 			} );
 		} else {
-			this.setState( {
-				showDialog: true,
-				editedProductId,
-				editedProductName: '',
-				editedPrice: {
-					currency: 'USD',
-					value: minimumCurrencyTransactionAmount( 'USD' ),
-				},
-				editedSchedule: '1 month',
-				editedPayWhatYouWant: false,
-				editedMultiplePerUser: false,
-				focusedName: false,
-			} );
+			this.setState( { showDialog: 'addNewPlan' } );
 		}
 	};
+
 	onCloseDeleteProduct = ( reason ) => {
 		if ( reason === 'delete' ) {
 			const product = this.props.products
@@ -177,152 +143,28 @@ class MembershipsProductsSection extends Component {
 		}
 		this.setState( { deletedProductId: null } );
 	};
-	handleCurrencyChange = ( event ) => {
-		const { value: currency } = event.currentTarget;
 
-		this.setState( ( state ) => ( {
-			editedPrice: { ...state.editedPrice, currency },
-		} ) );
-	};
-	handlePriceChange = ( event ) => {
-		const value = parseFloat( event.currentTarget.value );
-
-		this.setState( ( state ) => ( {
-			editedPrice: { ...state.editedPrice, value },
-		} ) );
-	};
-	handlePayWhatYouWant = ( newValue ) => this.setState( { editedPayWhatYouWant: newValue } );
-	handleMultiplePerUser = ( newValue ) => this.setState( { editedMultiplePerUser: newValue } );
-
-	onNameChange = ( event ) => this.setState( { editedProductName: event.target.value } );
-	onSelectSchedule = ( event ) => this.setState( { editedSchedule: event.target.value } );
-	isFormValid = ( field ) => {
-		if (
-			( field === 'price' || ! field ) &&
-			! isValidCurrencyAmount( this.state.editedPrice.currency, this.state.editedPrice.value )
-		) {
-			return false;
-		}
-		if ( ( field === 'name' || ! field ) && this.state.editedProductName.length === 0 ) {
-			return false;
-		}
-		return true;
-	};
-
-	renderEditDialog() {
+	renderAddNewPlanDialog() {
 		return (
-			<Dialog
-				isVisible={ this.state.showDialog }
+			<RecurringPaymentsPlanAddEditModal
+				isVisible={ this.state.showDialog === 'addNewPlan' }
+				currencyList={ currencyList }
+				minimumCurrencyTransactionAmount={ minimumCurrencyTransactionAmount }
 				onClose={ this.onCloseDialog }
-				buttons={ [
-					{
-						label: this.props.translate( 'Cancel' ),
-						action: 'cancel',
-					},
-					{
-						label: this.state.editedProductId
-							? this.props.translate( 'Edit' )
-							: this.props.translate( 'Add' ),
-						action: 'submit',
-						disabled: ! this.isFormValid(),
-					},
-				] }
-			>
-				<FormSectionHeading>
-					{ this.state.editedProductId && this.props.translate( 'Edit' ) }
-					{ ! this.state.editedProductId &&
-						this.props.translate( 'Add New Recurring Payment plan' ) }
-				</FormSectionHeading>
-				<p>
-					{ this.state.editedProductId &&
-						this.props.translate( 'Edit your existing Recurring Payments plan.' ) }
-					{ ! this.state.editedProductId &&
-						this.props.translate(
-							'Each amount you add will create a separate Recurring Payments plan. You can create multiple plans.'
-						) }
-				</p>
-				<FormFieldset>
-					<FormLabel htmlFor="currency">{ this.props.translate( 'Select price' ) }</FormLabel>
-					{ this.state.editedProductId && (
-						<Notice
-							text={ this.props.translate(
-								'Updating the price will not affect existing subscribers, who will pay what they were originally charged.'
-							) }
-							showDismiss={ false }
-						/>
-					) }
-					<FormCurrencyInput
-						name="currency"
-						id="currency"
-						value={ isNaN( this.state.editedPrice.value ) ? '' : this.state.editedPrice.value }
-						onChange={ this.handlePriceChange }
-						currencySymbolPrefix={ this.state.editedPrice.currency }
-						onCurrencyChange={ this.handleCurrencyChange }
-						currencyList={ currencyList }
-						placeholder="0.00"
-					/>
-					{ ! this.isFormValid( 'price' ) && (
-						<FormInputValidation
-							isError
-							text={ this.props.translate( 'Please enter a price higher than %s', {
-								args: [
-									formatCurrency(
-										minimumCurrencyTransactionAmount( this.state.editedPrice.currency ),
-										this.state.editedPrice.currency
-									),
-								],
-							} ) }
-						/>
-					) }
-				</FormFieldset>
-				<FormFieldset>
-					<FormLabel htmlFor="renewal_schedule">
-						{ this.props.translate( 'Select renewal schedule' ) }
-					</FormLabel>
-					<FormSelect
-						id="renewal_schedule"
-						value={ this.state.editedSchedule }
-						onChange={ this.onSelectSchedule }
-					>
-						<option value="1 month">{ this.props.translate( 'Monthly' ) }</option>
-						<option value="1 year">{ this.props.translate( 'Yearly' ) }</option>
-					</FormSelect>
-				</FormFieldset>
-				<FormFieldset>
-					<FormLabel htmlFor="title">
-						{ this.props.translate( 'Please describe your subscription' ) }
-					</FormLabel>
-					<FormTextInput
-						id="title"
-						value={ this.state.editedProductName }
-						onChange={ this.onNameChange }
-						onBlur={ () => this.setState( { focusedName: true } ) }
-					/>
-					{ ! this.isFormValid( 'name' ) && this.state.focusedName && (
-						<FormInputValidation isError text={ this.props.translate( 'Please input a name.' ) } />
-					) }
-				</FormFieldset>
-				<FormFieldset>
-					<FormToggle
-						onChange={ this.handlePayWhatYouWant }
-						checked={ this.state.editedPayWhatYouWant }
-					>
-						{ this.props.translate(
-							'Enable customers to pick their own amount ("Pay what you want").'
-						) }
-					</FormToggle>
-				</FormFieldset>
-				<FormFieldset>
-					<FormToggle
-						onChange={ this.handleMultiplePerUser }
-						checked={ this.state.editedMultiplePerUser }
-					>
-						{ this.props.translate(
-							'Allow the same customer to sign up multiple times to the same plan.'
-						) }
-					</FormToggle>
-				</FormFieldset>
-			</Dialog>
+				productId={ null }
+			/>
+		);
+	}
+
+	renderEditPlanDialog() {
+		return (
+			<RecurringPaymentsPlanAddEditModal
+				isVisible={ this.state.showDialog === 'editPlan' }
+				currencyList={ currencyList }
+				minimumCurrencyTransactionAmount={ minimumCurrencyTransactionAmount }
+				onClose={ this.onCloseDialog }
+				product={ this.state.product }
+			/>
 		);
 	}
 
@@ -333,7 +175,6 @@ class MembershipsProductsSection extends Component {
 				<HeaderCake backHref={ '/earn/payments/' + this.props.siteSlug }>
 					{ this.props.translate( 'Recurring Payments plans' ) }
 				</HeaderCake>
-				{ this.renderEditDialog() }
 
 				<SectionHeader>
 					<Button primary compact onClick={ () => this.openProductDialog( null ) }>
@@ -352,6 +193,8 @@ class MembershipsProductsSection extends Component {
 						{ this.renderEllipsisMenu( product.ID ) }
 					</CompactCard>
 				) ) }
+				{ this.renderAddNewPlanDialog() }
+				{ this.renderEditPlanDialog() }
 				<Dialog
 					isVisible={ !! this.state.deletedProductId }
 					buttons={ [
@@ -399,17 +242,6 @@ class MembershipsProductsSection extends Component {
  */
 function minimumCurrencyTransactionAmount( currency ) {
 	return MINIMUM_CURRENCY_AMOUNT[ currency ];
-}
-
-/**
- * Validates that the given price is at least the minimum transaction amount for the given currency.
- *
- * @param {string} currency Currency of price.
- * @param {number} price Amount in currency.
- * @returns {boolean} True if the price is valid for the currency.
- */
-function isValidCurrencyAmount( currency, price ) {
-	return price >= minimumCurrencyTransactionAmount( currency );
 }
 
 export default connect(
