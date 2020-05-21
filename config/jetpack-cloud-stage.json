@@ -40,5 +40,6 @@
 		"jetpack-cloud-auth": true
 	},
 	"site_filter": [ "jetpack" ],
-	"theme": "jetpack-cloud"
+	"theme": "jetpack-cloud",
+	"theme_color": "#2fb41f"
 }
