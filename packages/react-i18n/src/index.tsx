@@ -58,7 +58,7 @@ export const useI18n = (): I18nReact => React.useContext( I18nContext );
  * }
  * export default withI18n( MyComponent );
  */
-export const withI18n = createHigherOrderComponent< I18nProps >( ( InnerComponent ) => {
+export const withI18n = createHigherOrderComponent< I18nReact >( ( InnerComponent ) => {
 	return ( props ) => {
 		const i18n = useI18n();
 		return <InnerComponent { ...i18n } { ...props } />;
