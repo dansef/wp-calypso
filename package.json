@@ -171,7 +171,7 @@
 		"@signal-noise/stylelint-scales": "^1.2.0",
 		"@storybook/addon-actions": "^5.3.18",
 		"@storybook/preset-scss": "^1.0.2",
-		"@storybook/preset-typescript": "^1.2.2",
+		"@storybook/preset-typescript": "^3.0.0",
 		"@storybook/react": "^5.3.18",
 		"@testing-library/jest-dom": "^4.2.4",
 		"@testing-library/react": "^9.3.3",
